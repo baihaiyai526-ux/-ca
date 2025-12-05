@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip } from 'recharts';
-import { Leaf, Sun, Moon, Wind, Thermometer, Info, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Leaf, Sun, Moon, Wind, Thermometer, Info, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { TCMResult } from '../types';
 
 const MOCK_TCM_DATA = [
@@ -71,10 +71,19 @@ const TCMConstitution: React.FC = () => {
     const [view, setView] = useState<'result' | 'quiz'>('result');
     const [pageIndex, setPageIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<number, number>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [result, setResult] = useState<TCMResult>(CURRENT_RESULT);
 
     const totalPages = Math.ceil(QUESTIONS.length / QUESTIONS_PER_PAGE);
     const progress = Math.round(((pageIndex) / totalPages) * 100);
     
+    // Scroll to top on page change
+    useEffect(() => {
+        if (view === 'quiz') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [pageIndex, view]);
+
     // Get current page questions
     const currentQuestions = QUESTIONS.slice(
         pageIndex * QUESTIONS_PER_PAGE, 
@@ -91,23 +100,53 @@ const TCMConstitution: React.FC = () => {
     const handleNext = () => {
         if (pageIndex < totalPages - 1) {
             setPageIndex(prev => prev + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            // Submit
+            submitQuiz();
+        }
+    };
+
+    const submitQuiz = () => {
+        setIsSubmitting(true);
+        // Simulate API call and Calculation
+        setTimeout(() => {
+            // Mock Calculation: Update score based on answers (visual effect only)
+            const scores = Object.values(answers);
+            if (scores.length > 0) {
+                 const total = scores.reduce((a, b) => a + b, 0);
+                 const avg = total / scores.length; 
+                 // Simple mapping of 1-5 scale to percentage for demo
+                 const newScore = Math.round(((avg - 1) / 4) * 100);
+                 
+                 setResult(prev => ({
+                     ...prev,
+                     score: newScore
+                 }));
+            }
+
+            setIsSubmitting(false);
             setView('result');
             setPageIndex(0);
             setAnswers({});
-        }
+        }, 2000);
     };
 
     const handlePrevious = () => {
         if (pageIndex > 0) {
             setPageIndex(prev => prev - 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             setView('result');
         }
     };
+
+    if (isSubmitting) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 animate-fade-in bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-6" />
+                <h3 className="text-xl font-bold text-gray-800">正在分析您的体质数据...</h3>
+                <p className="text-gray-500 mt-2 text-center max-w-sm">系统正在根据《中医体质分类与判定》标准对您的回答进行综合分析，请稍候。</p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -135,10 +174,14 @@ const TCMConstitution: React.FC = () => {
                                 <Wind className="w-12 h-12 text-emerald-600" />
                             </div>
                             <h3 className="text-gray-500 text-sm font-medium">您的体质类型</h3>
-                            <h1 className="text-4xl font-bold text-gray-800 mt-2 mb-4">{CURRENT_RESULT.type}</h1>
+                            <h1 className="text-4xl font-bold text-gray-800 mt-2 mb-4">{result.type}</h1>
                             <p className="text-gray-600 text-sm leading-relaxed text-left bg-gray-50 p-4 rounded-lg">
-                                {CURRENT_RESULT.description}
+                                {result.description}
                             </p>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                                <span className="text-sm text-gray-500">综合得分</span>
+                                <span className="text-xl font-bold text-emerald-600">{result.score}</span>
+                            </div>
                         </div>
 
                         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 h-80">
@@ -164,7 +207,7 @@ const TCMConstitution: React.FC = () => {
                                 典型特征
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {CURRENT_RESULT.characteristics.map((char, i) => (
+                                {result.characteristics.map((char, i) => (
                                     <div key={i} className="flex items-center p-3 bg-gray-50 rounded-lg text-gray-700">
                                         <div className="w-2 h-2 rounded-full bg-emerald-400 mr-3"></div>
                                         {char}
@@ -181,7 +224,7 @@ const TCMConstitution: React.FC = () => {
                                     饮食调养
                                 </div>
                                 <p className="text-sm text-orange-900 leading-relaxed">
-                                    {CURRENT_RESULT.advice.diet}
+                                    {result.advice.diet}
                                 </p>
                             </div>
                             
@@ -191,7 +234,7 @@ const TCMConstitution: React.FC = () => {
                                     运动建议
                                 </div>
                                 <p className="text-sm text-blue-900 leading-relaxed">
-                                    {CURRENT_RESULT.advice.exercise}
+                                    {result.advice.exercise}
                                 </p>
                             </div>
 
@@ -201,7 +244,7 @@ const TCMConstitution: React.FC = () => {
                                     起居调摄
                                 </div>
                                 <p className="text-sm text-purple-900 leading-relaxed">
-                                    {CURRENT_RESULT.advice.lifestyle}
+                                    {result.advice.lifestyle}
                                 </p>
                             </div>
                         </div>

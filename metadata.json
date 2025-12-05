@@ -1,0 +1,5 @@
+{
+  "name": "TCM Health Manager",
+  "description": "A comprehensive health management platform for chronic disease patients integrating TCM and Western medicine, featuring medication tracking, constitution analysis, and doctor consultation.",
+  "requestFramePermissions": []
+}
